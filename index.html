@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#17172b" />
+    <meta name="description" content="Moonveil: an offline anime-inspired 2D RPG by Krysharvex Selenia." />
+    <title>Moonveil — Krysharvex Selenia</title>
+  </head>
+  <body>
+    <main id="app">
+      <header class="topbar">
+        <div class="brand-mark">☾</div>
+        <div><strong>MOONVEIL</strong><small>AN OFFLINE 2D RPG</small></div>
+        <button id="sound-toggle" class="icon-button" aria-label="Toggle sound" title="Toggle sound">♫</button>
+      </header>
+      <section class="hud" aria-label="Character status">
+        <div class="hero-label"><span class="orb"></span><span>Wanderer</span><span id="level">LV 1</span></div>
+        <div class="xp-track"><div id="xp-fill"></div></div>
+        <div class="stats"><span>❤ <b id="hp">100/100</b></span><span>✦ <b id="xp">0/30 XP</b></span><span>✧ <b id="coins">0</b></span></div>
+      </section>
+      <section class="game-wrap" aria-label="Game world">
+        <canvas id="game" width="960" height="600" aria-label="Moonveil game canvas"></canvas>
+        <div id="toast" class="toast" role="status">The Moonveil Forest awaits…</div>
+        <div id="start-screen" class="overlay">
+          <div class="moon">☾</div>
+          <p class="eyebrow">A SMALL ADVENTURE</p>
+          <h1>Moonveil</h1>
+          <p class="intro">A quiet forest. A forgotten shrine. Your story begins beneath the silver moon.</p>
+          <button id="start-button" class="primary-button">Begin Journey <span>→</span></button>
+          <p class="tiny-note">Offline · Touch friendly · No account required</p>
+        </div>
+        <div id="game-over" class="overlay hidden">
+          <div class="moon">✧</div><p class="eyebrow">THE FOREST GROWS QUIET</p>
+          <h1>Rest, Wanderer</h1><p class="intro">Your journey is not over. Rise and try again.</p>
+          <button id="retry-button" class="primary-button">Rise Again <span>↻</span></button>
+        </div>
+      </section>
+      <footer class="controls">
+        <div class="dpad" aria-label="Movement controls">
+          <button class="pad up" data-move="up" aria-label="Move up">▲</button>
+          <button class="pad left" data-move="left" aria-label="Move left">◀</button>
+          <button class="pad down" data-move="down" aria-label="Move down">▼</button>
+          <button class="pad right" data-move="right" aria-label="Move right">▶</button>
+        </div>
+        <div class="control-hint">MOVE<br /><span>Explore the forest</span></div>
+        <button id="attack-button" class="attack-button" aria-label="Attack">✦<small>ATTACK</small></button>
+      </footer>
+      <section class="quest-panel">
+        <div class="quest-icon">✧</div>
+        <div><p class="quest-title">FIRST LIGHT</p><p id="quest-text">Defeat 3 forest slimes to awaken the shrine.</p></div>
+        <span id="quest-count">0/3</span>
+      </section>
+      <footer class="credits">Made with moonlight <span>✦</span> By Krysharvex Selenia</footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
