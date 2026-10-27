@@ -1,0 +1,9 @@
+{
+  "appId": "id.my.selenia.moonveil",
+  "appName": "Moonveil",
+  "webDir": "dist",
+  "backgroundColor": "#10101d",
+  "android": {
+    "allowMixedContent": false
+  }
+}
