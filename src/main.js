@@ -92,10 +92,11 @@ function update(dt) {
     if(d>31){e.x+=ex/d*e.speed*dt;e.y+=ey/d*e.speed*dt;}
     else if(player.invuln<=0){player.hp-=12;player.invuln=.7;burst(player.x,player.y,'#ff9ba9',7);playTone(140,.1);updateHud();if(player.hp<=0){player.hp=0;state.over=true;$('#game-over').classList.remove('hidden');}}
   }
-  for(const e of state.enemies)if(e.hp===1&&e.maxHp===2&&e.hit>0)e.hit=0;
-  state.enemies=state.enemies.filter(e=>{if(e.hp<=0)return false;if(e.hp<0){defeat(e);return false;}return true;});
-  // A second pass keeps defeat rewards deterministic.
-  for(const e of state.enemies) if(e.hp<=0) defeat(e);
+  // Resolve defeated enemies before filtering them out, so rewards and quest progress are granted.
+  for(const e of state.enemies.slice()) {
+    if(e.hp<=0) { defeat(e); continue; }
+    if(e.hp===1&&e.maxHp===2&&e.hit>0)e.hit=0;
+  }
   state.enemies=state.enemies.filter(e=>e.hp>0);
   for(const p of state.particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;p.vx*=.96;p.vy*=.96;}
   state.particles=state.particles.filter(p=>p.life>0);
