@@ -17,7 +17,7 @@
       <section class="hud" aria-label="Character status">
         <div class="hero-label"><span class="orb"></span><span>Wanderer</span><span id="level">LV 1</span></div>
         <div class="xp-track"><div id="xp-fill"></div></div>
-        <div class="stats"><span>❤ <b id="hp">100/100</b></span><span>✦ <b id="xp">0/30 XP</b></span><span>✧ <b id="coins">0</b></span></div>
+        <div class="stats"><span>❤ <b id="hp">100/100</b></span><span>✦ <b id="xp">0/30 XP</b></span><span>Gold <b id="coins">0</b></span><span>✧ <b id="shards">0</b></span><span>⚔ <b id="weapon-name">Moonlight Sword</b></span></div>
       </section>
       <section class="game-wrap" aria-label="Game world">
         <canvas id="game" width="960" height="600" aria-label="Moonveil game canvas"></canvas>
@@ -35,9 +35,12 @@
           <h1>Rest, Wanderer</h1><p class="intro">Your journey is not over. Rise and try again.</p>
           <button id="retry-button" class="primary-button">Rise Again <span>↻</span></button>
         </div>
+        <div id="shop-panel" class="menu-panel hidden"><h2>☾ Moon Market</h2><p>Healing Potion · restore 45 HP · 20 Gold</p><button id="buy-potion">Buy Potion (+1)</button><p>Moon Shard · summon currency · 40 Gold</p><button id="buy-shard">Buy Moon Shard (+1)</button><button id="close-shop" class="secondary-button">Close</button></div>
+        <div id="gacha-panel" class="menu-panel hidden"><h2>✦ Weapon Summon</h2><p>Spend 1 Moon Shard for a random weapon.</p><p class="rarity-note">Mythic 1% · Legendary 7% · Epic 20% · Rare 34% · Common 38%</p><button id="summon-button">Summon ×1</button><p id="summon-result">No summon yet.</p><div id="equip-options"></div><button id="close-gacha" class="secondary-button">Close</button></div>
       </section>
       <footer class="controls">
         <div id="joystick" class="joystick" role="application" aria-label="Virtual analog movement control"><div class="joystick-ring"></div><div id="joystick-knob" class="joystick-knob"></div></div>
+        <div class="utility-controls"><button id="shop-button" class="utility-button">SHOP</button><button id="gacha-button" class="utility-button">GACHA</button><button id="potion-button" class="utility-button potion-button">✚<small>HEAL <b id="potion-count">2</b></small></button></div>
         <button id="attack-button" class="attack-button" aria-label="Attack">✦<small>ATTACK</small></button>
       </footer>
       <section class="quest-panel">
