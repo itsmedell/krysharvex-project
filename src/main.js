@@ -148,8 +148,12 @@ function drawPlayer() {
   const p=player;ctx.save();ctx.translate(p.x,p.y);
   ctx.fillStyle='#10192366';ctx.beginPath();ctx.ellipse(0,14,15,7,0,0,Math.PI*2);ctx.fill();
   if(p.invuln>0&&Math.floor(state.elapsed*18)%2===0)ctx.globalAlpha=.45;
-  // Face the last movement direction from the 360-degree analog.
-  ctx.rotate(Math.atan2(p.facing.y,p.facing.x)+Math.PI/2);
+  // Keep the character upright. Direction is used by movement and attacks,
+  // not as a free rotation of the whole body (which makes the sprite spin).
+  // Mirror only for left-facing movement; never tilt the character.
+  if(p.facing.x < -0.35) {
+    ctx.scale(-1, 1);
+  }
   // anime-style silver hair silhouette, cloak, face and eyes
   ctx.fillStyle='#342b4d';ctx.beginPath();ctx.moveTo(-12,-3);ctx.quadraticCurveTo(-24,-22,-5,-26);ctx.quadraticCurveTo(12,-31,17,-10);ctx.lineTo(12,12);ctx.lineTo(6,5);ctx.lineTo(-7,15);ctx.closePath();ctx.fill();
   ctx.fillStyle='#bfc7e6';ctx.beginPath();ctx.moveTo(-10,-9);ctx.quadraticCurveTo(-20,-28,-4,-28);ctx.lineTo(1,-19);ctx.lineTo(8,-28);ctx.lineTo(15,-13);ctx.lineTo(8,-3);ctx.lineTo(4,-12);ctx.lineTo(-2,-5);ctx.lineTo(-5,-13);ctx.closePath();ctx.fill();
