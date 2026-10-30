@@ -78,7 +78,7 @@ function update(dt) {
   if(!state.running||state.over)return;
   state.elapsed+=dt;state.attackTimer=Math.max(0,state.attackTimer-dt);player.invuln=Math.max(0,player.invuln-dt);
   if(state.toastTimer>0&&(state.toastTimer-=dt)<=0)$('#toast').classList.remove('show');
-  let dx=0,dy=0;
+  let dx=state.move.x,dy=state.move.y;
   if(state.keys.has('left')||state.keys.has('ArrowLeft')||state.keys.has('a'))dx--;
   if(state.keys.has('right')||state.keys.has('ArrowRight')||state.keys.has('d'))dx++;
   if(state.keys.has('up')||state.keys.has('ArrowUp')||state.keys.has('w'))dy--;
@@ -162,13 +162,36 @@ function holdButton(button, key) {
   const up=e=>{e.preventDefault();state.keys.delete(key);button.classList.remove('active');};
   button.addEventListener('pointerdown',down);['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(n=>button.addEventListener(n,up));
 }
-document.querySelectorAll('[data-move]').forEach(b=>holdButton(b,b.dataset.move));
+// Virtual analog joystick with pointer capture.
+const stick = $('#joystick'), knob = $('#joystick-knob');
+let stickPointer = null;
+function moveStick(e) {
+  const r = stick.getBoundingClientRect(), max = r.width * .34;
+  let x = e.clientX - (r.left + r.width/2), y = e.clientY - (r.top + r.height/2);
+  const len = Math.hypot(x,y);
+  if (len > max) { x = x/len*max; y = y/len*max; }
+  knob.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+  const mag = Math.hypot(x,y)/max;
+  state.move.x = mag < .13 ? 0 : x/max;
+  state.move.y = mag < .13 ? 0 : y/max;
+  const n = Math.hypot(state.move.x,state.move.y);
+  if (n > 1) { state.move.x/=n; state.move.y/=n; }
+}
+function releaseStick(e) {
+  if (stickPointer !== e.pointerId) return;
+  stickPointer = null; state.move.x=0; state.move.y=0;
+  knob.style.transform='translate(0,0)'; stick.classList.remove('engaged');
+}
+stick.addEventListener('pointerdown',e=>{e.preventDefault();stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);stick.classList.add('engaged');moveStick(e);});
+stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();moveStick(e);}});
+stick.addEventListener('pointerup',releaseStick);
+stick.addEventListener('pointercancel',releaseStick);
 $('#attack-button').addEventListener('pointerdown',e=>{e.preventDefault();attack();});
 $('#start-button').addEventListener('click',resetGame);
 $('#retry-button').addEventListener('click',resetGame);
 $('#sound-toggle').addEventListener('click',()=>{state.sound=!state.sound;$('#sound-toggle').style.color=state.sound?'#d5c8ff':'#88839f';toast(state.sound?'Sound effects enabled':'Sound effects muted');});
 window.addEventListener('keydown',e=>{const key=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();state.keys.add(key);if(e.key===' '||e.key==='j')attack();});
 window.addEventListener('keyup',e=>{state.keys.delete(e.key);state.keys.delete(e.key.toLowerCase());});
-window.addEventListener('blur',()=>state.keys.clear());
-document.addEventListener('visibilitychange',()=>{if(document.hidden)state.keys.clear();});
+window.addEventListener('blur',()=>{state.keys.clear();state.move.x=0;state.move.y=0;});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){state.keys.clear();state.move.x=0;state.move.y=0;}});
 updateHud();render();requestAnimationFrame(loop);
