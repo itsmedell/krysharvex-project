@@ -50,6 +50,17 @@ jobs:
         run: npx cap add android
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Lock Android orientation to landscape
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text()
+          marker = 'android:name=".MainActivity"'
+          if marker not in s:
+              raise SystemExit('MainActivity declaration not found')
+          p.write_text(s.replace(marker, marker + ' android:screenOrientation="landscape"', 1))
+          PY
       - name: Build debug APK
         run: |
           cd android
