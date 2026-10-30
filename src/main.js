@@ -8,7 +8,8 @@ const state = {
   running: false, over: false, last: 0, elapsed: 0, toastTimer: 0, attackTimer: 0,
   keys: new Set(), move: { x: 0, y: 0 }, enemies: [], particles: [],
   player: { x: 470, y: 315, r: 16, speed: 205, hp: 100, maxHp: 100, xp: 0, level: 1, coins: 0, facing: { x: 1, y: 0 }, invuln: 0 },
-  questKills: 0, shrineAwake: false, sound: false, audio: null
+  questKills: 0, shrineAwake: false, sound: false, audio: null,
+  potions: 2, shards: 0, inventory: ['moonlight'], equipped: 'moonlight', pity: 0, shopUnlocked: false, gachaUnlocked: false
 };
 const rand = (a,b) => a + Math.random()*(b-a);
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
@@ -24,15 +25,35 @@ function updateHud() {
   $('#xp').textContent = player.xp + '/' + (player.level * 30) + ' XP';
   $('#xp-fill').style.width = (player.xp / (player.level * 30) * 100) + '%';
   $('#coins').textContent = player.coins;
+  $('#shards').textContent = state.shards;
+  $('#weapon-name').textContent = currentWeapon().name;
+  $('#potion-count').textContent = state.potions;
+  $('#quest-text').textContent = state.shopUnlocked ? 'Moon Market and Weapon Summon unlocked — keep exploring!' : 'Defeat 3 forest slimes to unlock the Moon Market.';
   $('#quest-count').textContent = Math.min(3,state.questKills) + '/3';
   $('#quest-text').textContent = state.shrineAwake ? 'The shrine is awake. Keep exploring, Wanderer.' : 'Defeat 3 forest slimes to awaken the shrine.';
 }
 function spawnSlime(x, y) {
   state.enemies.push({x,y,r:15,hp:2,maxHp:2,speed:rand(27,42),phase:rand(0,6.28),hit:0});
 }
+const weapons = [
+  {id:'moonlight',name:'Moonlight Sword',rarity:'Common',damage:1,range:84,cooldown:.38},
+  {id:'daggers',name:'Lunar Daggers',rarity:'Rare',damage:1,range:70,cooldown:.22},
+  {id:'frost',name:'Frost Greatsword',rarity:'Epic',damage:3,range:104,cooldown:.78},
+  {id:'staff',name:'Celestial Staff',rarity:'Legendary',damage:2,range:170,cooldown:.58},
+  {id:'eclipse',name:'Eclipse Requiem',rarity:'Mythic',damage:5,range:128,cooldown:.65}
+];
+function currentWeapon(){return weapons.find(w=>w.id===state.equipped)||weapons[0];}
+function closePanels(){['shop-panel','gacha-panel'].forEach(id=>$('#'+id).classList.add('hidden'));}
+function openShop(){if(!state.shopUnlocked){toast('Defeat 3 slimes first to unlock the shop.');return;}closePanels();$('#shop-panel').classList.remove('hidden');}
+function openGacha(){if(!state.gachaUnlocked){toast('Defeat 3 slimes first to unlock summon.');return;}closePanels();$('#gacha-panel').classList.remove('hidden');}
+function buyPotion(){if(player.coins<20){toast('Need 20 Gold.');return;}player.coins-=20;state.potions++;updateHud();toast('Healing Potion purchased.');}
+function buyShard(){if(player.coins<40){toast('Need 40 Gold.');return;}player.coins-=40;state.shards++;updateHud();toast('Moon Shard acquired.');}
+function heal(){if(!state.running||state.over)return;if(state.potions<=0){toast('No potions left — visit the shop.');return;}if(player.hp>=player.maxHp){toast('HP is already full.');return;}state.potions--;player.hp=Math.min(player.maxHp,player.hp+45);updateHud();toast('Restored 45 HP.');burst(player.x,player.y,'#8ff0cb',12);}
+function summon(){if(state.shards<1){toast('Need 1 Moon Shard to summon.');return;}state.shards--;state.pity++;const roll=Math.random()*100;const w=state.pity>=30?weapons[3]:roll<1?weapons[4]:roll<8?weapons[3]:roll<28?weapons[2]:roll<62?weapons[1]:weapons[0];if(w.rarity==='Legendary'||w.rarity==='Mythic')state.pity=0;const fresh=!state.inventory.includes(w.id);if(fresh)state.inventory.push(w.id);else player.coins+=15;$('#summon-result').textContent=w.name+' · '+w.rarity+(fresh?'':' · duplicate (+15 Gold)');$('#equip-options').replaceChildren();for(const id of state.inventory){const item=weapons.find(x=>x.id===id),btn=document.createElement('button');btn.className='equip-option';btn.textContent='Equip '+item.name;btn.addEventListener('click',()=>{state.equipped=id;updateHud();toast('Equipped '+item.name);});$('#equip-options').append(btn);}updateHud();playTone(760,.2);}
 function resetGame() {
   state.running = true; state.over = false; state.elapsed = 0; state.attackTimer = 0;
   state.enemies = []; state.particles = []; state.questKills = 0; state.shrineAwake = false;
+  state.potions=2;state.shards=0;state.inventory=['moonlight'];state.equipped='moonlight';state.pity=0;state.shopUnlocked=false;state.gachaUnlocked=false;
   Object.assign(player,{x:470,y:315,hp:100,maxHp:100,xp:0,level:1,coins:0,invuln:0,facing:{x:1,y:0}});
   for(let i=0;i<7;i++) spawnSlime(rand(90,870),rand(90,520));
   $('#start-screen').classList.add('hidden'); $('#game-over').classList.add('hidden');
@@ -54,7 +75,7 @@ function burst(x,y,color,count=8) {
 }
 function attack() {
   if(!state.running || state.over || state.attackTimer>0) return;
-  state.attackTimer=.38; playTone(610,.09);
+  const w=currentWeapon(); state.attackTimer=w.cooldown; playTone(610,.09);
   const px=player.x+player.facing.x*25, py=player.y+player.facing.y*25;
   burst(px,py,'#d8c7ff',13);
   let hitCount=0;
@@ -62,15 +83,15 @@ function attack() {
     if(e.hp<=0) continue;
     const dx=e.x-player.x,dy=e.y-player.y,dist=Math.hypot(dx,dy);
     const dot=(dx*player.facing.x+dy*player.facing.y)/(dist||1);
-    if(dist<78 && dot>-.1){e.hp--;e.hit=.18;burst(e.x,e.y,'#f4d4ff',5);hitCount++;}
+    if(dist<=w.range+player.r+e.r && dot>.42){e.hp-=w.damage;e.hit=.18;burst(e.x,e.y,'#f4d4ff',5);hitCount++;}
   }
   if(hitCount) toast('Moonlight strike!'); else toast('A silver arc cuts through the air.');
 }
 function defeat(e) {
-  e.hp=0; state.questKills++; player.coins+=3; player.xp+=10; burst(e.x,e.y,'#b4f4e8',15); playTone(300,.14);
+  e.hp=0; state.questKills++; player.coins+=8; state.shards+=1; player.xp+=12; burst(e.x,e.y,'#b4f4e8',15); playTone(300,.14);
   if(player.xp>=player.level*30){player.xp-=player.level*30;player.level++;player.maxHp+=12;player.hp=player.maxHp;player.speed+=4;toast('Level up! LV '+player.level);}
   else toast('+10 XP  ·  +3 moon coins');
-  if(state.questKills>=3&&!state.shrineAwake){state.shrineAwake=true;toast('The shrine awakens. The moon remembers you.');burst(480,120,'#c8b7ff',28);}
+  if(state.questKills>=3&&!state.shrineAwake){state.shrineAwake=true;state.shopUnlocked=true;state.gachaUnlocked=true;toast('Moon Market and Weapon Summon unlocked!');burst(480,120,'#c8b7ff',28);}
   updateHud();
   if(state.enemies.filter(x=>x.hp>0).length<4) spawnSlime(rand(80,880),rand(90,530));
 }
@@ -127,6 +148,8 @@ function drawPlayer() {
   const p=player;ctx.save();ctx.translate(p.x,p.y);
   ctx.fillStyle='#10192366';ctx.beginPath();ctx.ellipse(0,14,15,7,0,0,Math.PI*2);ctx.fill();
   if(p.invuln>0&&Math.floor(state.elapsed*18)%2===0)ctx.globalAlpha=.45;
+  // Face the last movement direction from the 360-degree analog.
+  ctx.rotate(Math.atan2(p.facing.y,p.facing.x)+Math.PI/2);
   // anime-style silver hair silhouette, cloak, face and eyes
   ctx.fillStyle='#342b4d';ctx.beginPath();ctx.moveTo(-12,-3);ctx.quadraticCurveTo(-24,-22,-5,-26);ctx.quadraticCurveTo(12,-31,17,-10);ctx.lineTo(12,12);ctx.lineTo(6,5);ctx.lineTo(-7,15);ctx.closePath();ctx.fill();
   ctx.fillStyle='#bfc7e6';ctx.beginPath();ctx.moveTo(-10,-9);ctx.quadraticCurveTo(-20,-28,-4,-28);ctx.lineTo(1,-19);ctx.lineTo(8,-28);ctx.lineTo(15,-13);ctx.lineTo(8,-3);ctx.lineTo(4,-12);ctx.lineTo(-2,-5);ctx.lineTo(-5,-13);ctx.closePath();ctx.fill();
@@ -187,10 +210,14 @@ stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preven
 stick.addEventListener('pointerup',releaseStick);
 stick.addEventListener('pointercancel',releaseStick);
 $('#attack-button').addEventListener('pointerdown',e=>{e.preventDefault();attack();});
+$('#potion-button').addEventListener('pointerdown',e=>{e.preventDefault();heal();});
+$('#shop-button').addEventListener('click',openShop);$('#gacha-button').addEventListener('click',openGacha);
+$('#buy-potion').addEventListener('click',buyPotion);$('#buy-shard').addEventListener('click',buyShard);$('#summon-button').addEventListener('click',summon);
+$('#close-shop').addEventListener('click',closePanels);$('#close-gacha').addEventListener('click',closePanels);
 $('#start-button').addEventListener('click',resetGame);
 $('#retry-button').addEventListener('click',resetGame);
 $('#sound-toggle').addEventListener('click',()=>{state.sound=!state.sound;$('#sound-toggle').style.color=state.sound?'#d5c8ff':'#88839f';toast(state.sound?'Sound effects enabled':'Sound effects muted');});
-window.addEventListener('keydown',e=>{const key=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();state.keys.add(key);if(e.key===' '||e.key==='j')attack();});
+window.addEventListener('keydown',e=>{const key=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();state.keys.add(key);if(e.key===' '||e.key==='j')attack();if(e.key==='h')heal();});
 window.addEventListener('keyup',e=>{state.keys.delete(e.key);state.keys.delete(e.key.toLowerCase());});
 window.addEventListener('blur',()=>{state.keys.clear();state.move.x=0;state.move.y=0;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){state.keys.clear();state.move.x=0;state.move.y=0;}});
